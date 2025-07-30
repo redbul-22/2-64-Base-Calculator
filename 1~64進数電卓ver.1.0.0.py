@@ -7,10 +7,41 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
+from kivy.graphics import Color, Ellipse, Rectangle
+from kivy.metrics import dp
 
 kivy.require('2.0.0')
 
 DIGIT_MAP = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"
+
+class RoundButton(Button):
+    """
+    Modern round button with custom styling
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.background_normal = ''
+        self.background_down = ''
+        self.background_color = (0, 0, 0, 0)  # Transparent
+        self.bind(pos=self.update_graphics, size=self.update_graphics)
+        self.bind(state=self.update_graphics)
+        
+    def update_graphics(self, *args):
+        self.canvas.before.clear()
+        with self.canvas.before:
+            # Modern button colors
+            if self.state == 'down':
+                Color(0.2, 0.6, 0.9, 1)  # Blue when pressed
+            else:
+                Color(0.3, 0.7, 1.0, 1)  # Light blue normal state
+            
+            # Calculate the size to make it circular
+            size = min(self.width, self.height) * 0.8
+            pos_x = self.center_x - size / 2
+            pos_y = self.center_y - size / 2
+            
+            # Draw rounded rectangle (circular appearance)
+            Ellipse(pos=(pos_x, pos_y), size=(size, size))
 
 class BaseInput(TextInput):
     """
@@ -46,42 +77,59 @@ class MultiBaseCalculatorApp(App):
     def build(self):
         self.title = "Base-2 to 64 Calculator"
 
-        root = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        root = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(15))
+        root.canvas.before.clear()
+        with root.canvas.before:
+            Color(0.1, 0.1, 0.15, 1)  # Modern dark background
+            Rectangle(pos=root.pos, size=root.size)
+        root.bind(pos=self.update_bg, size=self.update_bg)
 
         # Base selection spinner: 2–64
         self.spinner = Spinner(
             text='10',
             values=[str(i) for i in range(2, 65)],
-            size_hint=(1, 0.2),
-            font_size=20
+            size_hint=(1, 0.15),
+            font_size=dp(20),
+            background_color=(0.2, 0.2, 0.3, 1)
         )
         self.spinner.bind(text=self.on_base_change)
 
-        # Input fields
+        # Input fields with modern styling
         self.entry1 = BaseInput(base=10,
                                 hint_text='Input 1 (base 10)',
                                 multiline=False,
-                                font_size=24)
+                                font_size=dp(18),
+                                background_color=(0.2, 0.2, 0.3, 1),
+                                foreground_color=(1, 1, 1, 1),
+                                size_hint=(1, 0.12))
         self.entry2 = BaseInput(base=10,
                                 hint_text='Input 2 (base 10)',
                                 multiline=False,
-                                font_size=24)
+                                font_size=dp(18),
+                                background_color=(0.2, 0.2, 0.3, 1),
+                                foreground_color=(1, 1, 1, 1),
+                                size_hint=(1, 0.12))
 
-        # Operation buttons grid
+        # Operation buttons grid with round buttons
         ops = [
             ('+', 'add'), ('−', 'subtract'),
             ('×', 'multiply'), ('÷', 'divide'),
             ('AND', 'and'), ('OR', 'or'),
             ('XOR', 'xor'), ('C', 'clear')
         ]
-        ops_layout = GridLayout(cols=4, spacing=5, size_hint=(1, 0.6))
+        ops_layout = GridLayout(cols=4, spacing=dp(10), size_hint=(1, 0.4))
         for label, op in ops:
-            btn = Button(text=label, font_size=20)
+            btn = RoundButton(text=label, font_size=dp(16), color=(1, 1, 1, 1))
             btn.bind(on_press=lambda inst, o=op: self.on_button(o))
             ops_layout.add_widget(btn)
 
-        # Result label
-        self.result_label = Label(text='Result:', font_size=24, size_hint=(1, 0.4))
+        # Result label with modern styling
+        self.result_label = Label(text='Result:', 
+                                 font_size=dp(18), 
+                                 size_hint=(1, 0.2),
+                                 color=(1, 1, 1, 1),
+                                 text_size=(None, None),
+                                 halign='center')
 
         # Assemble UI
         root.add_widget(self.spinner)
@@ -91,6 +139,13 @@ class MultiBaseCalculatorApp(App):
         root.add_widget(self.result_label)
 
         return root
+    
+    def update_bg(self, instance, value):
+        """Update background when size/position changes"""
+        instance.canvas.before.clear()
+        with instance.canvas.before:
+            Color(0.1, 0.1, 0.15, 1)
+            Rectangle(pos=instance.pos, size=instance.size)
 
     def on_base_change(self, spinner, value):
         base = int(value)
